@@ -1,7 +1,7 @@
 --UNIVERSIDADE ESTADUAL DO SUDOESTE DA BAHIA - UESB
 --TÓPICOS DE INFORMÁTICA APLICADA - TIA/ADM
 --PROF. MARCO A. D. RAMOS
---Discentes: Eduardo Ribeiro Fontes e Pedro Cândido Santos de Lima
+--Discentes: Eduardo Ribeiro Fontes e Pedro
 --DATA: 18 de setembro de 2026
 --Usei como base o código do professor MARCO A. D. RAMOS, com adaptações para o andamento do projeto.
 
@@ -17,9 +17,9 @@ entity bombom01 is
       reset, clk      : in  std_logic;-- reset zera a máquina; clk é o relógio
 		
       --dois fios de entrada de 1 bti: c irá ficar 1 quando entrar moeda de 5 e d deve ficar 1 quando entrar moeda de 10
-      c, d            : in  std_logic;
+      vc, c, u            : in  std_logic;
 		
-		--Vetor de 2 fios. Diz se tem posição 0 ou 1, formando um número binário de 2 bits (00, 01, 10, 11, códigos dos produtos)
+		--Vetor de 3 fios. Diz se tem posição 0 ou 1, formando um número binário de 3 bits (00, 01, 10, 11 e demais códigos dos produtos)
       sel_produto     : in  std_logic_vector(2 downto 0);
 		
 		--Saída de 2 bits que só vai mostrar o que os interruptores dizem. (aceota_c e aceita_c).
@@ -42,8 +42,8 @@ architecture arc_bombons of bombom01 is
 
    constant ACEITA : std_logic_vector(1 downto 0) := "11";  -- os dois tipos de moeda, sempre aceitos
 	--declaraç
-   signal preco_atual : std_logic_vector(5 downto 0);  -- preço do produto escolhido agora	
-   signal saldo_atual : std_logic_vector(5 downto 0);  -- quanto já foi depositado até agora
+   signal preco_atual : integer(0 to 10);  -- preço do produto escolhido agora	
+   signal saldo_atual : integer(0 to 10);  -- quanto já foi depositado até agora
 
 begin
 
@@ -53,11 +53,11 @@ begin
    process (sel_produto)
    begin
       case sel_produto is
-         when "00"   => preco_atual <= "10.1";  -- Batata frita grande:       2,5
-         when "01"   => preco_atual <= "001111";  -- Batata frita media:    1,5
-         when "10"   => preco_atual <= "010100";  -- Batata frita pequena: 0,75
-		 when "11"   => preco_atual <= "001010";  -- Tortilha grande: 3,5
-         when others => preco_atual <= "001010";  -- Tortilha pequena:  2
+         when "00"   => preco_atual <= "2.5";  -- Batata frita grande:       2,5
+         when "01"   => preco_atual <= "1.5";  -- Batata frita media:    1,5
+         when "10"   => preco_atual <= "0.75";  -- Batata frita pequena: 0,75
+			when "11"   => preco_atual <= "3.5";  -- Tortilha grande: 3,5
+         when others => preco_atual <= "2";  -- Tortilha pequena:  2
       end case;
    end process;
 
@@ -74,10 +74,12 @@ begin
       elsif (clk = '1' and clk'event) then -- só decide algo na borda de subida do clock
          saldo_tmp := saldo_atual;  -- parte do saldo que já tinha
 
-         if (c = '1') then
-            saldo_tmp := saldo_tmp + 5; -- entrou moeda de 5
-         elsif (d = '1') then
-            saldo_tmp := saldo_tmp + 10; -- entrou moeda de 10
+         if (vc = '0.25') then
+            saldo_tmp := saldo_tmp + 0.25; -- entrou moeda de 0.25
+         elsif (c = '0.5') then
+            saldo_tmp := saldo_tmp + 0.5; -- entrou moeda de 0.5
+			elsif (u = '1') then
+            saldo_tmp := saldo_tmp + 1; -- entrou moeda de 1
          end if;
 
          if (saldo_tmp >= preco_atual) then -- já deu para pagar o produto escolhido?
