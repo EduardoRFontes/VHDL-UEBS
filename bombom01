@@ -14,7 +14,6 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 --Entidade criada (as "portas do circuito")
 entity bombom01 is
    port (
-      --abre lista de fios que entram nessa caixa
       reset, clk      : in  std_logic;-- reset zera a máquina; clk é o relógio
 		
       --dois fios de entrada de 1 bti: c irá ficar 1 quando entrar moeda de 5 e d deve ficar 1 quando entrar moeda de 10
@@ -67,22 +66,22 @@ begin
    process (clk)
       variable saldo_tmp : std_logic_vector(5 downto 0);  -- variável: atualiza na hora, sem esperar o próximo clock
    begin
-      if (reset = '1') then          -- reset zera tudo
+      if (reset = '1') then -- reset: zera a porra toda
          saldo_atual   <= (others => '0');
          libera_bombom <= '0';
          troco         <= (others => '0');
 
-      elsif (clk = '1' and clk'event) then  -- só decide algo na borda de subida do clock
-         saldo_tmp := saldo_atual;   -- parte do saldo que já tinha
+      elsif (clk = '1' and clk'event) then -- só decide algo na borda de subida do clock
+         saldo_tmp := saldo_atual;  -- parte do saldo que já tinha
 
          if (c = '1') then
-            saldo_tmp := saldo_tmp + 5;   -- entrou moeda de 5
+            saldo_tmp := saldo_tmp + 5; -- entrou moeda de 5
          elsif (d = '1') then
-            saldo_tmp := saldo_tmp + 10;  -- entrou moeda de 10
+            saldo_tmp := saldo_tmp + 10; -- entrou moeda de 10
          end if;
 
-         if (saldo_tmp >= preco_atual) then  -- já deu para pagar o produto escolhido?
-            libera_bombom <= '1';            -- libera o produto
+         if (saldo_tmp >= preco_atual) then -- já deu para pagar o produto escolhido?
+            libera_bombom <= '1'; -- libera o produto
             troco         <= saldo_tmp - preco_atual;  -- calcula o troco, se pagou a mais
             saldo_tmp     := (others => '0');          -- zera o saldo para a próxima compra
          else
