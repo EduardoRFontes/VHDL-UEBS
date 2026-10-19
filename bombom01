@@ -3,7 +3,7 @@
 --PROF. MARCO A. D. RAMOS
 --Discentes: Eduardo Ribeiro Fontes e Pedro
 --DATA: 18 de setembro de 2026
--- Usei como base o código do professor MARCO A. D. RAMOS
+--Usei como base o código do professor MARCO A. D. RAMOS, com adaptações para o andamento do projeto.
 
 --Puxar da biblioteca
 library IEEE;
@@ -11,18 +11,30 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
---entidade criada (as "portas do circuito")
+--Entidade criada (as "portas do circuito")
 entity bombom01 is
    port (
       --abre lista de fios que entram nessa caixa
-      reset, clk      : in  std_logic;                     -- reset zera a máquina; clk é o relógio
-      --dois fios de entrada de 1bti: c irá ficar 1 quando entrar moeda de 5 e d deve ficar 1 quando entrar moeda de 10
-      c, d            : in  std_logic;                     -- c = moeda de 5 | d = moeda de 10
-      sel_produto     : in  std_logic_vector(1 downto 0);  -- escolhe o produto: 00, 01, 10, 11
-      moedas_aceitas  : out std_logic_vector(1 downto 0);  -- painel fixo: "11" = aceita moeda de 5 e de 10
+      reset, clk      : in  std_logic;-- reset zera a máquina; clk é o relógio
+		
+      --dois fios de entrada de 1 bti: c irá ficar 1 quando entrar moeda de 5 e d deve ficar 1 quando entrar moeda de 10
+      c, d            : in  std_logic;
+		
+		--Vetor de 2 fios. Diz se tem posição 0 ou 1, formando um número binário de 2 bits (00, 01, 10, 11, códigos dos produtos)
+      sel_produto     : in  std_logic_vector(1 downto 0);
+		
+		--Saída de 2 bits que só vai mostrar o que os interruptores dizem. (aceota_c e aceita_c).
+		--Voltar aqui quando for adicionar as cedulas que faltam no projeto
+      moedas_aceitas  : out std_logic_vector(1 downto 0); -- painel fixo: "11" = aceita moeda de 5 e de 10
+		
+		--Saídas de 6 bits. Vão dar para representar números de 0 a 63, provavelmente valores o suficientes para o projeto (até agora só vão de 5 a 20)
       saldo           : out std_logic_vector(5 downto 0);  -- quanto já foi depositado (em binário)
       preco           : out std_logic_vector(5 downto 0);  -- preço do produto selecionado
+		
+		--Volta a ser só um fio, que sobe para 1 quando puder liberar o produto
       libera_bombom   : out std_logic;                     -- sobe quando o produto pode ser liberado
+		
+		--Outro vetor de 6 bits, para que os valores de troco possam ir além de "sim" ou "não"
       troco           : out std_logic_vector(5 downto 0)   -- valor a devolver, se pagou a mais
    );
 end bombom01;
@@ -30,8 +42,8 @@ end bombom01;
 architecture arc_bombons of bombom01 is
 
    constant ACEITA : std_logic_vector(1 downto 0) := "11";  -- os dois tipos de moeda, sempre aceitos
-
-   signal preco_atual : std_logic_vector(5 downto 0);  -- preço do produto escolhido agora
+	--declaraç
+   signal preco_atual : std_logic_vector(5 downto 0);  -- preço do produto escolhido agora	
    signal saldo_atual : std_logic_vector(5 downto 0);  -- quanto já foi depositado até agora
 
 begin
@@ -45,7 +57,8 @@ begin
          when "00"   => preco_atual <= "000101";  -- Bala:       5
          when "01"   => preco_atual <= "001111";  -- Bombom:    15
          when "10"   => preco_atual <= "010100";  -- Chocolate: 20
-         when others => preco_atual <= "001010";  -- Pirulito:  10
+			when "11"   => preco_atual <= "001010";  -- Pirulito: 10
+         -- when others => preco_atual <= "001010";  -- Pirulito:  10
       end case;
    end process;
 
