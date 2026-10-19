@@ -1,0 +1,80 @@
+--UNIVERSIDADE ESTADUAL DO SUDOESTE DA BAHIA - UESB
+--TÓPICOS DE INFORMÁTICA APLICADA - TIA/ADM
+--PROF. MARCO A. D. RAMOS
+--DATA: 18 de setembro de 2026
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity bombom01 is
+   port (
+      reset, clk      : in  std_logic;                     -- reset zera a máquina; clk é o relógio
+      c, d            : in  std_logic;                     -- c = moeda de 5 | d = moeda de 10
+      sel_produto     : in  std_logic_vector(1 downto 0);  -- escolhe o produto: 00, 01, 10, 11
+      moedas_aceitas  : out std_logic_vector(1 downto 0);  -- painel fixo: "11" = aceita moeda de 5 e de 10
+      saldo           : out std_logic_vector(5 downto 0);  -- quanto já foi depositado (em binário)
+      preco           : out std_logic_vector(5 downto 0);  -- preço do produto selecionado
+      libera_bombom   : out std_logic;                     -- sobe quando o produto pode ser liberado
+      troco           : out std_logic_vector(5 downto 0)   -- valor a devolver, se pagou a mais
+   );
+end bombom01;
+
+architecture arc_bombons of bombom01 is
+
+   constant ACEITA : std_logic_vector(1 downto 0) := "11";  -- os dois tipos de moeda, sempre aceitos
+
+   signal preco_atual : std_logic_vector(5 downto 0);  -- preço do produto escolhido agora
+   signal saldo_atual : std_logic_vector(5 downto 0);  -- quanto já foi depositado até agora
+
+begin
+
+   moedas_aceitas <= ACEITA;  -- saída fixa, só para mostrar no painel
+
+   -- tabela de produtos: converte o código de 2 bits no preço correspondente
+   process (sel_produto)
+   begin
+      case sel_produto is
+         when "00"   => preco_atual <= "000101";  -- Bala:       5
+         when "01"   => preco_atual <= "001111";  -- Bombom:    15
+         when "10"   => preco_atual <= "010100";  -- Chocolate: 20
+         when others => preco_atual <= "001010";  -- Pirulito:  10
+      end case;
+   end process;
+
+   preco <= preco_atual;  -- mostra o preço escolhido para fora, só informativo
+
+   process (clk)
+      variable saldo_tmp : std_logic_vector(5 downto 0);  -- variável: atualiza na hora, sem esperar o próximo clock
+   begin
+      if (reset = '1') then          -- reset zera tudo
+         saldo_atual   <= (others => '0');
+         libera_bombom <= '0';
+         troco         <= (others => '0');
+
+      elsif (clk = '1' and clk'event) then  -- só decide algo na borda de subida do clock
+         saldo_tmp := saldo_atual;   -- parte do saldo que já tinha
+
+         if (c = '1') then
+            saldo_tmp := saldo_tmp + 5;   -- entrou moeda de 5
+         elsif (d = '1') then
+            saldo_tmp := saldo_tmp + 10;  -- entrou moeda de 10
+         end if;
+
+         if (saldo_tmp >= preco_atual) then  -- já deu para pagar o produto escolhido?
+            libera_bombom <= '1';            -- libera o produto
+            troco         <= saldo_tmp - preco_atual;  -- calcula o troco, se pagou a mais
+            saldo_tmp     := (others => '0');          -- zera o saldo para a próxima compra
+         else
+            libera_bombom <= '0';
+            troco         <= (others => '0');
+         end if;
+
+         saldo_atual <= saldo_tmp;  -- guarda o saldo atualizado para o próximo clock
+      end if;
+   end process;
+
+   saldo <= saldo_atual;  -- mostra o saldo acumulado para fora, só informativo
+
+end arc_bombons;
