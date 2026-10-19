@@ -20,7 +20,7 @@ entity bombom01 is
       c, d            : in  std_logic;
 		
 		--Vetor de 2 fios. Diz se tem posição 0 ou 1, formando um número binário de 2 bits (00, 01, 10, 11, códigos dos produtos)
-      sel_produto     : in  std_logic_vector(1 downto 0);
+      sel_produto     : in  std_logic_vector(2 downto 0);
 		
 		--Saída de 2 bits que só vai mostrar o que os interruptores dizem. (aceota_c e aceita_c).
 		--Voltar aqui quando for adicionar as cedulas que faltam no projeto
@@ -53,11 +53,11 @@ begin
    process (sel_produto)
    begin
       case sel_produto is
-         when "00"   => preco_atual <= "000101";  -- Bala:       5
-         when "01"   => preco_atual <= "001111";  -- Bombom:    15
-         when "10"   => preco_atual <= "010100";  -- Chocolate: 20
-			when "11"   => preco_atual <= "001010";  -- Pirulito: 10
-         -- when others => preco_atual <= "001010";  -- Pirulito:  10
+         when "00"   => preco_atual <= "10.1";  -- Batata frita grande:       2,5
+         when "01"   => preco_atual <= "001111";  -- Batata frita media:    1,5
+         when "10"   => preco_atual <= "010100";  -- Batata frita pequena: 0,75
+		 when "11"   => preco_atual <= "001010";  -- Tortilha grande: 3,5
+         when others => preco_atual <= "001010";  -- Tortilha pequena:  2
       end case;
    end process;
 
