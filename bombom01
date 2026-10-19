@@ -1,16 +1,22 @@
 --UNIVERSIDADE ESTADUAL DO SUDOESTE DA BAHIA - UESB
 --TÓPICOS DE INFORMÁTICA APLICADA - TIA/ADM
 --PROF. MARCO A. D. RAMOS
+--Discentes: Eduardo Ribeiro Fontes e Pedro
 --DATA: 18 de setembro de 2026
+-- Usei como base o código do professor MARCO A. D. RAMOS
 
+--Puxar da biblioteca
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
+--entidade criada (as "portas do circuito")
 entity bombom01 is
    port (
+      --abre lista de fios que entram nessa caixa
       reset, clk      : in  std_logic;                     -- reset zera a máquina; clk é o relógio
+      --dois fios de entrada de 1bti: c irá ficar 1 quando entrar moeda de 5 e d deve ficar 1 quando entrar moeda de 10
       c, d            : in  std_logic;                     -- c = moeda de 5 | d = moeda de 10
       sel_produto     : in  std_logic_vector(1 downto 0);  -- escolhe o produto: 00, 01, 10, 11
       moedas_aceitas  : out std_logic_vector(1 downto 0);  -- painel fixo: "11" = aceita moeda de 5 e de 10
