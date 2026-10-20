@@ -2,99 +2,172 @@
 --TÓPICOS DE INFORMÁTICA APLICADA - TIA/ADM
 --PROF. MARCO A. D. RAMOS
 --Discentes: Eduardo Ribeiro Fontes e Pedro
---DATA: 18 de setembro de 2026
---Usei como base o código do professor MARCO A. D. RAMOS, com adaptações para o andamento do projeto.
+--DATA: 25 de setembro de 2026
+--Especificação: Máquina de Vender Salgados
 
---Puxar da biblioteca
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.STD_LOGIC_ARITH.ALL;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
---Entidade criada (as "portas do circuito")
 entity bombom01 is
    port (
-      reset, clk      : in  std_logic;-- reset zera a máquina; clk é o relógio
-		
-      --dois fios de entrada de 1 bti: c irá ficar 1 quando entrar moeda de 5 e d deve ficar 1 quando entrar moeda de 10
-      vc, c, u            : in  std_logic;
-		
-		--Vetor de 3 fios. Diz se tem posição 0 ou 1, formando um número binário de 3 bits (00, 01, 10, 11 e demais códigos dos produtos)
-      sel_produto     : in  std_logic_vector(2 downto 0);
-		
-		--Saída de 2 bits que só vai mostrar o que os interruptores dizem. (aceota_c e aceita_c).
-		--Voltar aqui quando for adicionar as cedulas que faltam no projeto
-      moedas_aceitas  : out std_logic_vector(1 downto 0); -- painel fixo: "11" = aceita moeda de 5 e de 10
-		
-		--Saídas de 6 bits. Vão dar para representar números de 0 a 63, provavelmente valores o suficientes para o projeto (até agora só vão de 5 a 20)
-      saldo           : out std_logic_vector(5 downto 0);  -- quanto já foi depositado (em binário)
-      preco           : out std_logic_vector(5 downto 0);  -- preço do produto selecionado
-		
-		--Volta a ser só um fio, que sobe para 1 quando puder liberar o produto
-      libera_bombom   : out std_logic;                     -- sobe quando o produto pode ser liberado
-		
-		--Outro vetor de 6 bits, para que os valores de troco possam ir além de "sim" ou "não"
-      troco           : out std_logic_vector(5 downto 0)   -- valor a devolver, se pagou a mais
+      reset, clk       : in  std_logic;
+
+      -- "Moeda_in" do diagrama: sensor detecta o valor (em centavos) e avisa com um pulso
+      moeda_valor       : in  integer range 0 to 999;  -- valor lido pelo sensor de moedas
+      moeda_inserida    : in  std_logic;                -- sobe por 1 ciclo quando uma moeda chega
+
+      sel_produto       : in  std_logic_vector(2 downto 0);  -- botão de produto ("Tipo_do_salgado")
+      confirma_selecao  : in  std_logic;                     -- botão confirmando a escolha
+      desiste           : in  std_logic;                     -- botão de desistência
+
+      estoque           : in  std_logic_vector(4 downto 0);  -- 1 bit por produto: '1' = tem estoque
+
+      moedas_aceitas        : out std_logic_vector(2 downto 0);  -- painel: aceita 0,25 / 0,50 / 1,00
+      aviso_sem_estoque      : out std_logic;                     -- acende se o produto escolhido acabou
+      moeda_invalida         : out std_logic;                     -- sobe por 1 ciclo: moeda não reconhecida, não soma
+      libera_salgado         : out std_logic;                     -- libera o produto comprado
+      libera_troco           : out std_logic;                     -- libera troco (pagou a mais)
+      libera_todas_as_moedas : out std_logic;                     -- desistência: devolve tudo que foi depositado
+
+      display_reais      : out std_logic_vector(6 downto 0);  -- 7 segmentos: parte inteira (reais)
+      display_decimo      : out std_logic_vector(6 downto 0);  -- 7 segmentos: primeiro decimal (dezena de centavo)
+
+      preco  : out integer range 0 to 999;  -- preço do produto escolhido, informativo
+      saldo  : out integer range 0 to 999;  -- soma depositada até agora, informativo
+      troco  : out integer range 0 to 999   -- valor a devolver, se pagou a mais
    );
 end bombom01;
 
 architecture arc_bombons of bombom01 is
 
-   constant ACEITA : std_logic_vector(1 downto 0) := "11";  -- os dois tipos de moeda, sempre aceitos
-	--declaraç
-   signal preco_atual : integer(0 to 10);  -- preço do produto escolhido agora	
-   signal saldo_atual : integer(0 to 10);  -- quanto já foi depositado até agora
+   constant ACEITA : std_logic_vector(2 downto 0) := "111";  -- as 3 moedas válidas, sempre aceitas
+
+   -- os 4 estados da máquina: igual à "Unidade de Controle" do diagrama
+   type estado_t is (AGUARDANDO, AVISO, RECEBENDO, LIBERANDO);
+   signal estado_atual : estado_t;
+
+   signal preco_atual : integer range 0 to 999;
+   signal saldo_atual : integer range 0 to 999;
+
+   -- "Lógica auxiliar" do diagrama: decodifica um dígito (0-9) para os 7 segmentos
+   function seg7(digito : integer range 0 to 9) return std_logic_vector is
+   begin
+      case digito is
+         when 0 => return "1000000";
+         when 1 => return "1111001";
+         when 2 => return "0100100";
+         when 3 => return "0110000";
+         when 4 => return "0011001";
+         when 5 => return "0010010";
+         when 6 => return "0000010";
+         when 7 => return "1111000";
+         when 8 => return "0000000";
+         when 9 => return "0010000";
+      end case;
+   end function;
 
 begin
 
-   moedas_aceitas <= ACEITA;  -- saída fixa, só para mostrar no painel
+   moedas_aceitas <= ACEITA;  -- saída fixa, só para o painel
 
-   -- tabela de produtos: converte o código de 2 bits no preço correspondente
+   -- tabela de produtos: código de 3 bits -> preço (em centavos)
    process (sel_produto)
    begin
       case sel_produto is
-         when "00"   => preco_atual <= "2.5";  -- Batata frita grande:       2,5
-         when "01"   => preco_atual <= "1.5";  -- Batata frita media:    1,5
-         when "10"   => preco_atual <= "0.75";  -- Batata frita pequena: 0,75
-			when "11"   => preco_atual <= "3.5";  -- Tortilha grande: 3,5
-         when others => preco_atual <= "2";  -- Tortilha pequena:  2
+         when "000"  => preco_atual <= 250;  -- Batata frita grande: 2,50
+         when "001"  => preco_atual <= 150;  -- Batata frita média:  1,50
+         when "010"  => preco_atual <= 75;   -- Batata frita pequena: 0,75
+         when "011"  => preco_atual <= 350;  -- Tortilha grande:     3,50
+         when others => preco_atual <= 200;  -- Tortilha pequena:    2,00
       end case;
    end process;
 
-   preco <= preco_atual;  -- mostra o preço escolhido para fora, só informativo
+   preco <= preco_atual;
+
+   -- mostra o saldo acumulado nos dois displays: reais e primeiro decimal de centavos
+   display_reais  <= seg7(saldo_atual / 100);
+   display_decimo <= seg7((saldo_atual mod 100) / 10);
 
    process (clk)
-      variable saldo_tmp : std_logic_vector(5 downto 0);  -- variável: atualiza na hora, sem esperar o próximo clock
+      variable saldo_tmp : integer range 0 to 999;
+      variable tem_estoque : std_logic;
    begin
-      if (reset = '1') then -- reset: zera a porra toda
-         saldo_atual   <= (others => '0');
-         libera_bombom <= '0';
-         troco         <= (others => '0');
+      if (reset = '1') then
+         estado_atual           <= AGUARDANDO;
+         saldo_atual            <= 0;
+         libera_salgado         <= '0';
+         libera_troco           <= '0';
+         libera_todas_as_moedas <= '0';
+         aviso_sem_estoque      <= '0';
+         moeda_invalida         <= '0';
+         troco                  <= 0;
 
-      elsif (clk = '1' and clk'event) then -- só decide algo na borda de subida do clock
-         saldo_tmp := saldo_atual;  -- parte do saldo que já tinha
+      elsif (clk = '1' and clk'event) then
 
-         if (vc = '0.25') then
-            saldo_tmp := saldo_tmp + 0.25; -- entrou moeda de 0.25
-         elsif (c = '0.5') then
-            saldo_tmp := saldo_tmp + 0.5; -- entrou moeda de 0.5
-			elsif (u = '1') then
-            saldo_tmp := saldo_tmp + 1; -- entrou moeda de 1
-         end if;
+         -- por padrão, a cada clock, nenhuma dessas saídas fica ativa; só sobem no caso certo
+         libera_salgado         <= '0';
+         libera_troco           <= '0';
+         libera_todas_as_moedas <= '0';
+         aviso_sem_estoque      <= '0';
+         moeda_invalida         <= '0';
 
-         if (saldo_tmp >= preco_atual) then -- já deu para pagar o produto escolhido?
-            libera_bombom <= '1'; -- libera o produto
-            troco         <= saldo_tmp - preco_atual;  -- calcula o troco, se pagou a mais
-            saldo_tmp     := (others => '0');          -- zera o saldo para a próxima compra
-         else
-            libera_bombom <= '0';
-            troco         <= (others => '0');
-         end if;
+         case estado_atual is
 
-         saldo_atual <= saldo_tmp;  -- guarda o saldo atualizado para o próximo clock
+            when AGUARDANDO =>  -- cliente ainda está escolhendo o produto
+               if (confirma_selecao = '1') then
+                  tem_estoque := estoque(to_integer(unsigned(sel_produto)));
+                  if (tem_estoque = '1') then
+                     estado_atual <= RECEBENDO;   -- item 4: tem estoque, pode receber moedas
+                  else
+                     estado_atual <= AVISO;       -- item 3: sem estoque, emite aviso
+                  end if;
+               end if;
+
+            when AVISO =>  -- item 3: aviso de falta de estoque
+               aviso_sem_estoque <= '1';
+               if (confirma_selecao = '1') then
+                  estado_atual <= AGUARDANDO;  -- cliente escolhe outro produto
+               end if;
+
+            when RECEBENDO =>  -- item 4/5/6/7: recebendo moedas, pode desistir a qualquer momento
+               saldo_tmp := saldo_atual;
+
+               if (desiste = '1') then
+                  -- item 6: desistência, devolve tudo o que foi depositado
+                  libera_todas_as_moedas <= '1';
+                  troco                  <= saldo_tmp;
+                  saldo_tmp := 0;
+                  estado_atual <= AGUARDANDO;
+
+               elsif (moeda_inserida = '1') then
+                  if (moeda_valor = 25 or moeda_valor = 50 or moeda_valor = 100) then
+                     saldo_tmp := saldo_tmp + moeda_valor;  -- item 2: moeda válida, soma
+                  else
+                     moeda_invalida <= '1';  -- item 5: moeda inválida, não soma, passa direto
+                  end if;
+
+                  if (saldo_tmp >= preco_atual) then
+                     estado_atual <= LIBERANDO;
+                  end if;
+               end if;
+
+               saldo_atual <= saldo_tmp;
+
+            when LIBERANDO =>  -- soma completada: libera produto e troco, se houver
+               libera_salgado <= '1';
+               if (saldo_atual > preco_atual) then
+                  libera_troco <= '1';
+                  troco        <= saldo_atual - preco_atual;
+               else
+                  troco <= 0;
+               end if;
+               saldo_atual  <= 0;
+               estado_atual <= AGUARDANDO;
+
+         end case;
       end if;
    end process;
 
-   saldo <= saldo_atual;  -- mostra o saldo acumulado para fora, só informativo
+   saldo <= saldo_atual;
 
 end arc_bombons;
