@@ -175,6 +175,21 @@ Considere uma situação em que o usuário deseja comprar uma batata frita grand
 
 O desenvolvimento utiliza os seguintes recursos da linguagem:
 
+### 8.1. Bibliotecas
+
+O projeto utiliza as bibliotecas IEEE:
+
+```vhdl
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+```
+
+- **IEEE.STD_LOGIC_1164:** permite utilizar os tipos `std_logic` e `std_logic_vector`, fundamentais para representar os sinais digitais do sistema.
+- **IEEE.NUMERIC_STD:** disponibiliza operações aritméticas e conversões entre tipos numéricos e vetores lógicos, sendo utilizada na conversão do código do produto para um índice numérico.
+
+### 8.2. Estruturas da linguagem
+
 - **Entity:** define a interface de entrada e saída do sistema.
 - **Architecture:** descreve o funcionamento interno da máquina.
 - **Signals:** armazenam informações utilizadas entre os processos.
