@@ -3,7 +3,7 @@
 **Universidade Estadual do Sudoeste da Bahia (UESB)**  
 **Disciplina:** Tópicos de Informática Aplicada (TIA/ADM)  
 **Professor:** Marco A. D. Ramos  
-**Discentes:** Eduardo Ribeiro Fontes e Pedro  
+**Discentes:** Eduardo Ribeiro Fontes e Pedro Cândido  
 **Data:** 25 de setembro de 2026
 
 ---
