@@ -41,7 +41,7 @@ Os produtos são selecionados por meio de um vetor de três bits (`sel_produto`)
 | 001 | Batata frita média | R$ 1,50 |
 | 010 | Batata frita pequena | R$ 0,75 |
 | 011 | Tortilha grande | R$ 3,50 |
-| Outros | Tortilha pequena | R$ 2,00 |
+| 111 | Tortilha pequena | R$ 2,00 |
 
 Os preços são armazenados internamente em centavos, utilizando números inteiros para evitar operações com valores decimais.
 
