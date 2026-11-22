@@ -79,7 +79,7 @@ begin
          when "001"  => preco_atual <= 150;  -- Batata frita média:  1,50
          when "010"  => preco_atual <= 75;   -- Batata frita pequena: 0,75
          when "011"  => preco_atual <= 350;  -- Tortilha grande:     3,50
-         when others => preco_atual <= 200;  -- Tortilha pequena:    2,00
+         when "111" => preco_atual <= 200;  -- Tortilha pequena:    2,00
       end case;
    end process;
 
