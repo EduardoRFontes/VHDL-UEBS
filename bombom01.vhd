@@ -80,7 +80,7 @@ begin
          when "010"  => preco_atual <= 75;   -- Batata frita pequena: 0,75
          when "011"  => preco_atual <= 350;  -- Tortilha grande:     3,50
          when "100" => preco_atual <= 200;  -- Tortilha pequena:    2,00
-			when others => preco_atual <= 0;    -- códigos inexistentes ("101", "110", "111", etc.)
+		 when others => preco_atual <= 0;    -- códigos inexistentes ("101", "110", "111", etc.)
       end case;
    end process;
 
